@@ -4,6 +4,12 @@ Implementation of E2-TTS, [Embarrassingly Easy Fully Non-Autoregressive Zero-Sho
 
 This implementation is based on the [lucidrains implementation](https://github.com/lucidrains/e2-tts-pytorch) in Pytorch, which differs from the paper in that it uses a [multistream transformer](https://arxiv.org/abs/2107.10342) for text and audio, with conditioning done every transformer block.
 
+## Installation
+
+```bash
+pip install mlx-e2-tts
+```
+
 ## Usage
 
 ```python
@@ -12,6 +18,7 @@ import mlx.core as mx
 
 from e2_tts_mlx.model import E2TTS
 from e2_tts_mlx.trainer import E2Trainer
+from e2_tts_mlx.data import load_libritts_r
 
 e2tts = E2TTS(
     tokenizer="char-utf8", # or "phoneme_en" for phoneme-based tokenization
@@ -33,12 +40,14 @@ mx.eval(e2tts.parameters())
 batch_size = 128
 max_duration = 30
 
-dataset = load_libritts_r(split="dev-clean", max_duration = max_duration)
+dataset = load_libritts_r(split="dev-clean", max_duration = max_duration)  # or any other audio/caption data set
 
 trainer = E2Trainer(model = e2tts, num_warmup_steps = 1000)
 trainer.train(train_dataset = dataset, learning_rate = 7.5e-5, batch_size = batch_size)
 
 ```
+
+Note the model size specified above (from the paper) is very large. See `train_example.py` for a more practical-sized model you can train on your local device.
 
 ## Appreciation
 

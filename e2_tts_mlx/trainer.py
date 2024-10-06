@@ -126,7 +126,7 @@ class E2Trainer:
         log_start_date = datetime.datetime.now()
 
         batched_dataset = (
-            train_dataset()
+            train_dataset
             .repeat(1_000_000) # repeat indefinitely
             .shuffle(1000)
             .prefetch(prefetch_size=batch_size, num_threads=4)

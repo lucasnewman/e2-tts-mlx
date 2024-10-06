@@ -13,6 +13,8 @@ import numpy as np
 from einops.array_api import rearrange, reduce, repeat, pack
 import einx
 
+from vocos_mlx import Vocos
+
 from g2p_en import G2p
 
 E2TTSReturn = namedtuple("E2TTS", ["loss", "cond", "pred", "flow", "w", "mask"])
@@ -855,6 +857,8 @@ class E2TTS(nn.Module):
         tokenizer: (
             Literal["char_utf8", "phoneme_en"] | Callable[[list[str]]]
         ) = "char_utf8",
+        use_vocos=True,
+        pretrained_vocos_path="lucasnewman/vocos-mel-24khz",
     ):
         super().__init__()
 
@@ -925,7 +929,9 @@ class E2TTS(nn.Module):
 
         # default vocos for mel -> audio
 
-        # self.vocos = Vocos.from_pretrained(pretrained_vocos_path) if use_vocos else None
+        self.vocos = (
+            Vocos.from_pretrained(pretrained_vocos_path).freeze() if use_vocos else None
+        )
 
     def transformer_with_pred_head(
         self,
@@ -1021,6 +1027,8 @@ class E2TTS(nn.Module):
         steps=32,
         cfg_strength=1.0,
         max_duration=4096,
+        vocoder: Callable[[mx.array]] | None = None,
+        return_raw_output: bool | None = None,
     ):
         self.eval()
 
@@ -1070,9 +1078,13 @@ class E2TTS(nn.Module):
 
         max_duration = duration.max().item()
 
-        cond = mx.pad(cond, [(0, 0), (0, max_duration - cond_seq_len), (0, 0)], constant_values=0)
+        cond = mx.pad(
+            cond, [(0, 0), (0, max_duration - cond_seq_len), (0, 0)], constant_values=0
+        )
         cond_mask = mx.pad(
-            cond_mask, [(0, 0), (0, max_duration - cond_mask.shape[-1])], constant_values=False
+            cond_mask,
+            [(0, 0), (0, max_duration - cond_mask.shape[-1])],
+            constant_values=False,
         )
         cond_mask = rearrange(cond_mask, "... -> ... 1")
 
@@ -1082,7 +1094,7 @@ class E2TTS(nn.Module):
 
         def fn(t, x):
             # at each step, conditioning is fixed
-            
+
             step_cond = mx.where(cond_mask, cond, mx.zeros_like(cond))
 
             # predict flow
@@ -1100,6 +1112,30 @@ class E2TTS(nn.Module):
         out = sampled
 
         out = mx.where(cond_mask, cond, out)
+
+        # able to return raw untransformed output, if not using mel rep
+
+        if exists(return_raw_output) and return_raw_output:
+            return out
+
+        # take care of transforming mel to audio if `vocoder` is passed in, or if `use_vocos` is turned on
+
+        if exists(vocoder):
+            assert not exists(
+                self.vocos
+            ), "`use_vocos` should not be turned on if you are passing in a custom `vocoder` on sampling"
+            out = rearrange(out, "b n d -> b d n")
+            out = vocoder(out)
+
+        elif exists(self.vocos):
+            audio = []
+            for mel, one_mask in zip(out, mask):
+                one_out = mx.array(np.array(mel)[one_mask])
+                one_out = rearrange(one_out, "n d -> 1 n d")
+                one_audio = self.vocos.decode(one_out)
+                audio.append(one_audio)
+
+            out = audio
 
         return out
 

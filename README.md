@@ -57,12 +57,13 @@ cond = ...
 text = ...
 duration = ...  # from a trained DurationPredictor or otherwise
 
-generated_mel_spec = e2tts.sample(
+generated_audio = e2tts.sample(
     cond = cond,
     text = text,
     duration = duration,
     steps = 32,
     cfg_strength = 1.0,  # if trained for cfg
+    use_vocos = True  # set to False to get mel spectrograms instead of audio
 )
 ```
 

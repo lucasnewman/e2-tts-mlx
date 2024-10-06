@@ -13,7 +13,6 @@ pip install mlx-e2-tts
 ## Usage
 
 ```python
-
 import mlx.core as mx
 
 from e2_tts_mlx.model import E2TTS
@@ -21,7 +20,7 @@ from e2_tts_mlx.trainer import E2Trainer
 from e2_tts_mlx.data import load_libritts_r
 
 e2tts = E2TTS(
-    tokenizer="char-utf8", # or "phoneme_en" for phoneme-based tokenization
+    tokenizer="char-utf8",  # or "phoneme_en"
     cond_drop_prob = 0.25,
     frac_lengths_mask = (0.7, 0.9),
     transformer = dict(
@@ -40,11 +39,31 @@ mx.eval(e2tts.parameters())
 batch_size = 128
 max_duration = 30
 
-dataset = load_libritts_r(split="dev-clean", max_duration = max_duration)  # or any other audio/caption data set
+dataset = load_libritts_r(split="dev-clean")  # or any audio/caption dataset
 
 trainer = E2Trainer(model = e2tts, num_warmup_steps = 1000)
-trainer.train(train_dataset = dataset, learning_rate = 7.5e-5, batch_size = batch_size)
 
+trainer.train(
+    train_dataset = ...,
+    learning_rate = 7.5e-5,
+    batch_size = batch_size
+)
+```
+
+... after much training ...
+
+```python
+cond = ...
+text = ...
+duration = ...  # from a trained DurationPredictor or otherwise
+
+generated_mel_spec = e2tts.sample(
+    cond = cond,
+    text = text,
+    duration = duration,
+    steps = 32,
+    cfg_strength = 1.0,  # if trained for cfg
+)
 ```
 
 Note the model size specified above (from the paper) is very large. See `train_example.py` for a more practical-sized model you can train on your local device.

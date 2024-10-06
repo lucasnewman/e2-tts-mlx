@@ -159,7 +159,7 @@ class E2Trainer:
                 log_start_date = datetime.datetime.now()
 
                 print(
-                    f"step {global_step}: loss = {loss.item():.4f}, sec per step = {elapsed_time.seconds / log_every}"
+                    f"step {global_step}: loss = {loss.item():.4f}, sec per step = {(elapsed_time.seconds / log_every):.2f}"
                 )
 
                 if exists(self.duration_predictor):

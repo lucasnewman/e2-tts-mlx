@@ -35,7 +35,7 @@ def lens_to_mask(
     length: int | None = None,
 ) -> mx.array:  # Bool['b n']
     if not exists(length):
-        length = t.amax()
+        length = t.max()
 
     seq = mx.arange(length)
     return einx.less("n, b -> b n", seq, t)
@@ -844,7 +844,6 @@ class E2TTS(nn.Module):
         self,
         transformer: dict | Transformer = None,
         duration_predictor: dict | DurationPredictor | None = None,
-        odeint_kwargs: dict = dict(atol=1e-5, rtol=1e-5, method="midpoint"),
         cond_drop_prob=0.25,
         num_channels=None,
         mel_spec_module: nn.Module | None = None,
@@ -876,10 +875,6 @@ class E2TTS(nn.Module):
         self.frac_lengths_mask = frac_lengths_mask
 
         self.duration_predictor = duration_predictor
-
-        # sampling
-
-        self.odeint_kwargs = odeint_kwargs
 
         # mel spec
 
@@ -1016,7 +1011,6 @@ class E2TTS(nn.Module):
 
         return mx.stack(ys)
 
-    @mx.compile
     def sample(
         self,
         cond: mx.array,
@@ -1049,7 +1043,7 @@ class E2TTS(nn.Module):
             assert text.shape[0] == batch
 
         if exists(text):
-            text_lens = (text != -1).sum(dim=-1)
+            text_lens = (text != -1).sum(axis=-1)
             lens = mx.maximum(
                 text_lens, lens
             )  # make sure lengths are at least those of the text characters
@@ -1070,15 +1064,15 @@ class E2TTS(nn.Module):
         duration = mx.maximum(
             lens + 1, duration
         )  # just add one token so something is generated
-        duration = duration.clamp(max=max_duration)
+        duration = mx.minimum(duration, max_duration)
 
         assert duration.shape[0] == batch
 
-        max_duration = duration.amax()
+        max_duration = duration.max().item()
 
-        cond = mx.pad(cond, (0, 0, 0, max_duration - cond_seq_len), value=0.0)
+        cond = mx.pad(cond, [(0, 0), (0, max_duration - cond_seq_len), (0, 0)], constant_values=0)
         cond_mask = mx.pad(
-            cond_mask, (0, max_duration - cond_mask.shape[-1]), value=False
+            cond_mask, [(0, 0), (0, max_duration - cond_mask.shape[-1])], constant_values=False
         )
         cond_mask = rearrange(cond_mask, "... -> ... 1")
 
@@ -1088,7 +1082,7 @@ class E2TTS(nn.Module):
 
         def fn(t, x):
             # at each step, conditioning is fixed
-
+            
             step_cond = mx.where(cond_mask, cond, mx.zeros_like(cond))
 
             # predict flow
@@ -1100,7 +1094,7 @@ class E2TTS(nn.Module):
         y0 = mx.random.normal(cond.shape)
         t = mx.linspace(0, 1, steps)
 
-        trajectory = self.odeint(fn, y0, t, **self.odeint_kwargs)
+        trajectory = self.odeint(fn, y0, t)
         sampled = trajectory[-1]
 
         out = sampled

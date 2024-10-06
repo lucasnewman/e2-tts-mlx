@@ -46,7 +46,8 @@ trainer = E2Trainer(model = e2tts, num_warmup_steps = 1000)
 trainer.train(
     train_dataset = ...,
     learning_rate = 7.5e-5,
-    batch_size = batch_size
+    batch_size = batch_size,
+    total_steps = 1_000_000
 )
 ```
 

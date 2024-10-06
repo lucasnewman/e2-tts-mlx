@@ -13,15 +13,6 @@ import mlx.core as mx
 from e2_tts_mlx.model import E2TTS
 from e2_tts_mlx.trainer import E2Trainer
 
-duration_predictor = DurationPredictor(
-    transformer = dict(
-        dim = 512,
-        depth = 8,
-        heads = 8,
-        max_seq_len = 1024
-    )
-)
-
 e2tts = E2TTS(
     tokenizer="char-utf8", # or "phoneme_en" for phoneme-based tokenization
     cond_drop_prob = 0.25,
@@ -39,7 +30,13 @@ e2tts = E2TTS(
 )
 mx.eval(e2tts.parameters())
 
-E2Trainer(model = e2tts).train(train_dataset=..., learning_rate=7.5e-5, batch_size=...)
+batch_size = 128
+max_duration = 30
+
+dataset = load_libritts_r(split="dev-clean", max_duration = max_duration)
+
+trainer = E2Trainer(model = e2tts, num_warmup_steps = 1000)
+trainer.train(train_dataset = dataset, learning_rate = 7.5e-5, batch_size = batch_size)
 
 ```
 

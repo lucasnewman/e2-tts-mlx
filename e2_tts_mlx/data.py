@@ -33,13 +33,16 @@ def files_with_extensions(dir: Path, extensions: list = ["wav"]):
 # transforms
 
 
+def _load_transcript_file(sample):
+    audio_file = Path(bytes(sample["file"]).decode("utf-8"))
+    transcript_file = audio_file.with_suffix(".normalized.txt")
+    sample["transcript_file"] = transcript_file.as_posix().encode("utf-8")
+    return sample
+
+
 def _load_transcript(sample):
     audio_file = Path(bytes(sample["file"]).decode("utf-8"))
     transcript_file = audio_file.with_suffix(".normalized.txt")
-    if not transcript_file.exists():
-        # drop the sample if there's no transcript
-        return dict()
-
     transcript = np.array(
         list(transcript_file.read_text().strip().encode("utf-8")), dtype=np.int8
     )
@@ -188,7 +191,8 @@ def load_libritts_r(
         dx.files_from_tar(target)
         .to_stream()
         .sample_transform(lambda s: s if bytes(s["file"]).endswith(b".wav") else dict())
-        .sample_transform(_load_transcript)
+        .sample_transform(_load_transcript_file)
+        .read_from_tar(target, "transcript_file", "transcript")
         .read_from_tar(target, "file", "audio")
         .load_audio("audio", from_memory=True)
         .sample_transform(partial(_with_max_duration, max_duration=max_duration))

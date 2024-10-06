@@ -127,7 +127,7 @@ class E2Trainer:
 
         batched_dataset = (
             train_dataset()
-            .repeat(1e3) # repeat indefinitely
+            .repeat(1_000_000) # repeat indefinitely
             .shuffle(1000)
             .prefetch(prefetch_size=batch_size, num_threads=4)
             .batch(batch_size)

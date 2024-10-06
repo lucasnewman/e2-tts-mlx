@@ -39,7 +39,7 @@ def _load_transcript(sample):
     if not transcript_file.exists():
         # drop the sample if there's no transcript
         return dict()
-    
+
     transcript = np.array(
         list(transcript_file.read_text().strip().encode("utf-8")), dtype=np.int8
     )
@@ -77,7 +77,7 @@ def _to_mel_spec(sample):
     return sample
 
 
-def _with_max_duration(sample, sample_rate = 24_000, max_duration=12):
+def _with_max_duration(sample, sample_rate=24_000, max_duration=30):
     audio_duration = sample["audio"].shape[0] / sample_rate
     if audio_duration > max_duration:
         return dict()
@@ -165,7 +165,7 @@ def load_libritts_r_tarfile(
 
 
 def load_libritts_r(
-    root=None, dir=None, split="dev-clean", quiet=False, validate_download=True, max_duration=30
+    root=None, split="dev-clean", quiet=False, validate_download=True, max_duration=30
 ):
     """Load the libritts_r dataset directly from the TAR archive.
 
@@ -179,37 +179,38 @@ def load_libritts_r(
             progress.
     """
 
-    if dir is not None: # from a folder on disk
-        path = Path(dir).expanduser()
+    target = load_libritts_r_tarfile(
+        root=root, split=split, quiet=quiet, validate_download=validate_download
+    )
+    target = str(target)
 
-        files = files_with_extensions(path)
-        print(f"Found {len(files)} files at {path}")
+    dset = (
+        dx.files_from_tar(target)
+        .to_stream()
+        .sample_transform(lambda s: s if bytes(s["file"]).endswith(b".wav") else dict())
+        .sample_transform(_load_transcript)
+        .read_from_tar(target, "file", "audio")
+        .load_audio("audio", from_memory=True)
+        .sample_transform(partial(_with_max_duration, max_duration=max_duration))
+        .sample_transform(_to_mel_spec)
+    )
 
-        dset = (
-            dx.buffer_from_vector(files)
-            .to_stream()
-            .sample_transform(lambda s: s if bytes(s["file"]).endswith(b".wav") else dict())
-            .sample_transform(_load_transcript)
-            .sample_transform(partial(_load_cached_mel_spec, max_duration=max_duration))
-            .pad_to_multiple("mel_spec", dim=1, pad_multiple=128, pad_value=0.0)
-        )
+    return dset
 
-        return dset
-    else: # from a tar file
-        target = load_libritts_r_tarfile(
-            root=root, split=split, quiet=quiet, validate_download=validate_download
-        )
-        target = str(target)
 
-        dset = (
-            dx.files_from_tar(target)
-            .to_stream()
-            .sample_transform(lambda s: s if bytes(s["file"]).endswith(b".wav") else dict())
-            .sample_transform(_load_transcript)
-            .read_from_tar(target, "file", "audio")
-            .load_audio("audio", from_memory=True)
-            .sample_transform(_with_max_duration)
-            .sample_transform(_to_mel_spec)
-        )
-        
-        return dset
+def load_dir(dir=None, max_duration=30):
+    path = Path(dir).expanduser()
+
+    files = files_with_extensions(path)
+    print(f"Found {len(files)} files at {path}")
+
+    dset = (
+        dx.buffer_from_vector(files)
+        .to_stream()
+        .sample_transform(lambda s: s if bytes(s["file"]).endswith(b".wav") else dict())
+        .sample_transform(_load_transcript)
+        .sample_transform(partial(_load_cached_mel_spec, max_duration=max_duration))
+        .pad_to_multiple("mel_spec", dim=1, pad_multiple=128, pad_value=0.0)
+    )
+
+    return dset

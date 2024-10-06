@@ -1,6 +1,6 @@
-# E2 TTS — MLX
-
 ![E2 TTS diagram](e2tts.png)
+
+# E2 TTS — MLX
 
 Implementation of E2-TTS, [Embarrassingly Easy Fully Non-Autoregressive Zero-Shot TTS](https://arxiv.org/abs/2406.18009v1), with the [MLX](https://github.com/ml-explore/mlx) framework.
 

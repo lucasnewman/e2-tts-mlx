@@ -17,7 +17,7 @@ from vocos_mlx import Vocos
 
 from g2p_en import G2p
 
-E2TTSReturn = namedtuple("E2TTS", ["loss", "cond", "pred", "flow", "w", "mask"])
+E2TTSReturn = namedtuple("E2TTS", ["loss", "cond", "pred_flow", "pred_data", "flow"])
 
 
 def exists(v):
@@ -1206,19 +1206,17 @@ class E2TTS(nn.Module):
 
         # transformer and prediction head
 
-        pred = self.transformer_with_pred_head(
+        pred_flow = self.transformer_with_pred_head(
             w, cond, times=times, text=text, mask=mask
         )
+        pred_data = x0 + pred_flow
 
         # flow matching loss
 
-        rand_span_mask = rearrange(rand_span_mask, "b n -> b n 1")
+        loss = nn.losses.mse_loss(pred_flow, flow, reduction="none")
 
-        loss = nn.losses.mse_loss(pred, flow, reduction="none")
-
+        rand_span_mask = repeat(rand_span_mask, "b n -> b n d", d=self.num_channels)
         masked_loss = mx.where(rand_span_mask, loss, mx.zeros_like(loss))
-        denom = mx.sum(rand_span_mask) * loss.shape[-1]
-        scaled_loss = masked_loss / mx.maximum(denom, 1e-6)
-        loss = mx.sum(scaled_loss)
+        loss = mx.sum(masked_loss) / mx.maximum(mx.sum(rand_span_mask), 1e-6)
 
-        return E2TTSReturn(loss, cond, pred, flow, w, rand_span_mask)
+        return E2TTSReturn(loss, cond, pred_flow, pred_data, flow)

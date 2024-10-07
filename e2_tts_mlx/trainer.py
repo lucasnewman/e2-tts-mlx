@@ -103,15 +103,15 @@ class E2Trainer:
         global_step = start_step
 
         def loss_fn(model: E2TTS, mel_spec, text, lens):
-            (loss, cond, pred, flow, w, mask) = model(mel_spec, text=text, lens=lens)
-            return (loss, cond, pred, flow, w, mask)
+            (loss, cond, pred_flow, pred_data, flow) = model(mel_spec, text=text, lens=lens)
+            return (loss, cond, pred_flow, pred_data, flow)
 
         # state = [self.model.state, self.optimizer.state, mx.random.state]
 
         # @partial(mx.compile, inputs=state, outputs=state)
         def train_step(mel_spec, text_inputs, mel_lens):
             loss_and_grad_fn = nn.value_and_grad(self.model, loss_fn)
-            (loss, cond, pred, flow, w, mask), grads = loss_and_grad_fn(
+            (loss, cond, pred_flow, pred_data, flow), grads = loss_and_grad_fn(
                 self.model, mel_spec, text=text_inputs, lens=mel_lens
             )
 
@@ -120,7 +120,7 @@ class E2Trainer:
 
             self.optimizer.update(self.model, grads)
 
-            return (loss, cond, pred, flow, w, mask)
+            return (loss, cond, pred_flow, pred_data, flow)
 
         training_start_date = datetime.datetime.now()
         log_start_date = datetime.datetime.now()
@@ -143,7 +143,7 @@ class E2Trainer:
             mel_spec = rearrange(mx.array(batch["mel_spec"]), "b 1 n c -> b n c")
             mel_lens = mx.array(batch["mel_len"], dtype=mx.int32)
 
-            (loss, cond, pred, flow, w, mask) = train_step(
+            (loss, cond, pred_flow, pred_data, flow) = train_step(
                 mel_spec, text_inputs, mel_lens
             )
             mx.eval(self.model.parameters(), self.optimizer.state)
@@ -166,9 +166,10 @@ class E2Trainer:
                     print(f"duration loss: {dur_loss.item():.4f}")
 
                 if global_step % plot_every == 0:
-                    plot_spectrogram(w[0])
-                    plot_spectrogram(pred[0])
+                    plot_spectrogram(pred_flow[0])
                     plot_spectrogram(flow[0])
+                    plot_spectrogram(pred_data[0])
+                    plot_spectrogram(mel_spec[0])
 
             global_step += 1
 

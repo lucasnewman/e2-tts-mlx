@@ -43,6 +43,9 @@ def _load_transcript_file(sample):
 def _load_transcript(sample):
     audio_file = Path(bytes(sample["file"]).decode("utf-8"))
     transcript_file = audio_file.with_suffix(".normalized.txt")
+    if not transcript_file.exists():
+        return dict()
+    
     transcript = np.array(
         list(transcript_file.read_text().strip().encode("utf-8")), dtype=np.int8
     )

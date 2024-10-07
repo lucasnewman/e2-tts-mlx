@@ -49,7 +49,7 @@ def mask_from_start_end_indices(
     end: mx.array,
     max_length: int | None = None,
 ):
-    max_seq_len = default(max_length, seq_len.max().item())
+    max_seq_len = max_length  # default(max_length, seq_len.max().item())
     seq = mx.arange(max_seq_len).astype(mx.int32)
     return einx.greater_equal("n, b -> b n", seq, start) & einx.less(
         "n, b -> b n", seq, end
@@ -357,8 +357,8 @@ class TextAudioCrossCondition(nn.Module):
 
     def __call__(
         self,
-        audio: mx.array,  # Float['b n d'],
-        text: mx.array,  # Float['b n dt']
+        audio: mx.array,
+        text: mx.array,
     ):
         audio_text, _ = pack((audio, text), "b n *")
 
@@ -518,11 +518,6 @@ class Transformer(nn.Module):
 
         self.depth = depth
         self.layers = []
-
-        # rotary embedding
-
-        self.rotary_emb = nn.RoPE(dim_head)
-        self.text_rotary_emb = nn.RoPE(dim_head)
 
         # time conditioning
         # will use adaptive rmsnorm
@@ -949,7 +944,7 @@ class E2TTS(nn.Module):
 
         if self.concat_cond:
             # concat condition, given as using voicebox-like scheme
-            x = mx.concatenate((cond, x), dim=-1)
+            x = mx.concatenate((cond, x), axis=-1)
 
         x = self.proj_in(x)
 

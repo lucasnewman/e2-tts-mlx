@@ -45,7 +45,7 @@ def _load_transcript(sample):
     transcript_file = audio_file.with_suffix(".normalized.txt")
     if not transcript_file.exists():
         return dict()
-    
+
     transcript = np.array(
         list(transcript_file.read_text().strip().encode("utf-8")), dtype=np.int8
     )
@@ -217,7 +217,7 @@ def load_dir(dir=None, max_duration=30):
         .sample_transform(lambda s: s if bytes(s["file"]).endswith(b".wav") else dict())
         .sample_transform(_load_transcript)
         .sample_transform(partial(_load_cached_mel_spec, max_duration=max_duration))
-        .pad_to_multiple("mel_spec", dim=1, pad_multiple=128, pad_value=0.0)
+        .pad_to_multiple("mel_spec", dim=1, pad_multiple=512, pad_value=0.0)
     )
 
     return dset

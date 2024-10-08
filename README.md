@@ -44,7 +44,7 @@ max_duration = 30
 
 dataset = load_libritts_r(split="dev-clean")  # or any audio/caption dataset
 
-trainer = E2Trainer(model = e2tts, num_warmup_steps = 1000)
+trainer = E2Trainer(model = e2tts, num_warmup_steps = 20_000)
 
 trainer.train(
     train_dataset = ...,
@@ -57,14 +57,10 @@ trainer.train(
 ... after much training ...
 
 ```python
-cond = ...
-text = ...
-duration = ...  # from a trained DurationPredictor or otherwise
-
 generated_audio = e2tts.sample(
-    cond = cond,
-    text = text,
-    duration = duration,
+    cond = cond,  # reference mel spectrogram for voice matching
+    text = text,  # caption for generation
+    duration = duration, # from a trained DurationPredictor or otherwise
     steps = 32,
     cfg_strength = 1.0,  # if trained for cfg
     use_vocos = True  # set to False to get mel spectrograms instead of audio

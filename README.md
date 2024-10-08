@@ -2,7 +2,7 @@
 
 # E2 TTS — MLX
 
-Implementation of E2-TTS, [Embarrassingly Easy Fully Non-Autoregressive Zero-Shot TTS](https://arxiv.org/abs/2406.18009v1), with the [MLX](https://github.com/ml-explore/mlx) framework.
+Implementation of E2-TTS, [Embarrassingly Easy Fully Non-Autoregressive Zero-Shot TTS](https://arxiv.org/abs/2406.18009v2), with the [MLX](https://github.com/ml-explore/mlx) framework.
 
 E2 TTS is a non-autoregressive, zero-shot text-to-speech system that simplifies the typical TTS pipeline by using a flow-matching mel spectrogram generator trained on a masked audio infilling task, without the need for frame-level alignment information.
 

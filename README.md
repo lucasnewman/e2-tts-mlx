@@ -4,6 +4,8 @@
 
 Implementation of E2-TTS, [Embarrassingly Easy Fully Non-Autoregressive Zero-Shot TTS](https://arxiv.org/abs/2406.18009v1), with the [MLX](https://github.com/ml-explore/mlx) framework.
 
+E2 TTS is a non-autoregressive, zero-shot text-to-speech system that simplifies the typical TTS pipeline by using a flow-matching mel spectrogram generator trained on a masked audio infilling task, without the need for frame-level alignment information.
+
 This implementation is based on the [lucidrains implementation](https://github.com/lucidrains/e2-tts-pytorch) in Pytorch, which differs from the paper in that it uses a [multistream transformer](https://arxiv.org/abs/2107.10342) for text and audio, with conditioning done every transformer block.
 
 ## Installation
@@ -22,7 +24,7 @@ from e2_tts_mlx.trainer import E2Trainer
 from e2_tts_mlx.data import load_libritts_r
 
 e2tts = E2TTS(
-    tokenizer="char-utf8",  # or "phoneme_en"
+    tokenizer="char-utf8",  # or "phoneme_en" / callable
     cond_drop_prob = 0.25,
     frac_lengths_mask = (0.7, 0.9),
     transformer = dict(
@@ -31,14 +33,13 @@ e2tts = E2TTS(
         heads = 16,
         text_depth = 12,
         text_heads = 8,
-        text_ff_mult = 4,
         max_seq_len = 4096,
         dropout = 0.1
     )
 )
 mx.eval(e2tts.parameters())
 
-batch_size = 128
+batch_size = 32
 max_duration = 30
 
 dataset = load_libritts_r(split="dev-clean")  # or any audio/caption dataset
@@ -70,7 +71,7 @@ generated_audio = e2tts.sample(
 )
 ```
 
-Note the model size specified above (from the paper) is very large. See `train_example.py` for a more practical-sized model you can train on your local device.
+See `train_example.py` for an example of single-device training.
 
 ## Appreciation
 

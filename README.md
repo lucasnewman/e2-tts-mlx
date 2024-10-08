@@ -47,7 +47,7 @@ dataset = load_libritts_r(split="dev-clean")  # or any audio/caption dataset
 trainer = E2Trainer(model = e2tts, num_warmup_steps = 20_000)
 
 trainer.train(
-    train_dataset = ...,
+    train_dataset = dataset,
     learning_rate = 7.5e-5,
     batch_size = batch_size,
     total_steps = 1_000_000

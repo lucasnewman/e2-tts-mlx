@@ -8,13 +8,14 @@ requires = [
     "numpy",
     "pyyaml",
     "setuptools",
-    "vocos-mlx"
+    "vocos-mlx",
+    "wandb"
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "mlx-e2-tts"
-version = "0.0.5"
+version = "0.0.6"
 authors = [{name = "Lucas Newman", email = "lucasnewman@me.com"}]
 license = {text = "MIT"}
 description = "E2-TTS - MLX"

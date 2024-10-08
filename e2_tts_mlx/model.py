@@ -409,8 +409,7 @@ class Attention(nn.Module):
         dim: int,
         heads: int,
         dim_head: int,
-        kv_heads: int | None = None,
-        rotary_pos_emb: mx.array | None = None,
+        kv_heads: int | None = None
     ):
         super().__init__()
         self.n_heads: int = heads
@@ -424,7 +423,7 @@ class Attention(nn.Module):
         self.wk = nn.Linear(dim, self.n_kv_heads * dim_head, bias=False)
         self.wv = nn.Linear(dim, self.n_kv_heads * dim_head, bias=False)
         self.wo = nn.Linear(self.n_heads * dim_head, dim, bias=False)
-        self.rope = nn.RoPE(dim_head, traditional=True)
+        self.rope = nn.RoPE(dim_head)
 
     def __call__(self, x: mx.array, mask: mx.array | None = None) -> mx.array:
         if exists(mask):

@@ -195,14 +195,10 @@ class E2Trainer:
                     print(f"duration loss: {dur_loss.item():.4f}")
 
                 if global_step % plot_every == 0:
-                    images = [
-                        plot_spectrogram("predicted_flow", pred_flow[0], global_step),
-                        plot_spectrogram("flow", flow[0], global_step),
-                        plot_spectrogram("predicted_mel", pred_data[0], global_step),
-                        plot_spectrogram("mel spec", mel_spec[0], global_step),
-                    ]
-                    if self.log_with_wandb:
-                        wandb.log({"images": images}, step=global_step)
+                    plot_spectrogram("predicted_flow", pred_flow[0], global_step)
+                    plot_spectrogram("flow", flow[0], global_step)
+                    plot_spectrogram("predicted_mel", pred_data[0], global_step)
+                    plot_spectrogram("mel spec", mel_spec[0], global_step)
 
             global_step += 1
 

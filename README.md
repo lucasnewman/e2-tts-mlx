@@ -40,7 +40,6 @@ e2tts = E2TTS(
 mx.eval(e2tts.parameters())
 
 batch_size = 32
-max_duration = 30
 
 dataset = load_libritts_r(split="dev-clean")  # or any audio/caption dataset
 

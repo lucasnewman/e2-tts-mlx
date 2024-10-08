@@ -55,8 +55,8 @@ def _load_transcript(sample):
 
 def _load_cached_mel_spec(sample, max_duration=5):
     audio_file = Path(bytes(sample["file"]).decode("utf-8"))
-    mel_file = audio_file.with_suffix(".mel.npy.npz")
-    mel_spec = mx.load(mel_file.as_posix(), stream=mx.cpu)["arr_0"]
+    mel_file = audio_file.with_suffix(".mel.npz")
+    mel_spec = mx.load(mel_file.as_posix())["arr_0"]
     mel_len = mel_spec.shape[1]
 
     if mel_len > int(max_duration * 93.75):

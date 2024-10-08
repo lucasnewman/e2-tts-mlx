@@ -1,3 +1,5 @@
+# optional, saves the preprocessed mel spectrogram for improved training efficiency.
+
 from pathlib import Path
 from tqdm import tqdm
 
@@ -6,10 +8,6 @@ import mlx.core as mx
 from e2_tts_mlx.model import log_mel_spectrogram
 
 import torchaudio
-
-
-# utilities
-
 
 def files_with_extensions(root: Path, extensions: list = ["wav"]):
     files = []
@@ -23,7 +21,7 @@ path = Path("...").expanduser()
 files = files_with_extensions(path)
 
 for file in tqdm(files):
-    mel_file = file.with_suffix(".mel.npy")
+    mel_file = file.with_suffix(".mel.npz")
     if mel_file.exists():
         continue
 
